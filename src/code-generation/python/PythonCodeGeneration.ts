@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { TextDocument } from "vscode";
-import { CodeGeneration, CodeResult } from "./CodeGeneration";
+import { CodeGenerationBase, CodeResult } from "../CodeGenerationBase";
+import path = require("path");
+import { generateDocumentMetadata } from "./metadataGeneration";
 
 // Add a docstring describing what the function does.
 
@@ -8,7 +10,7 @@ const systemPromptBase = `
 You are a helpful python code generator. 
 Always respond with the modified query and a single code block. 
 
-Modify the query to be more specific. The user might write vague queries like "make pancakes". In this example the modified query would be "Give me a recipe for pancakes". Infer the specificity of the query without asking the user.
+Modify the query to be more specific. The user might write vague queries like "make pancakes". In this example the modified query would be "Give me a recipe for pancakes". Infer the specificity of the query without asking the user. Use filename and document metadata as help when modifying the query.
 
 All functions should have strong typing on input and output. 
 Do not add extra text/information/warnings to the response.
@@ -24,19 +26,19 @@ Code block:
 \`\`\`
 `;
 
-export class PythonCodeGeneration extends CodeGeneration {
+export class PythonCodeGeneration extends CodeGenerationBase {
   getSystemPrompt(document: TextDocument): string {
     let systemPrompt = systemPromptBase.trim();
 
-    //   const existingImports = getImportSection(document.getText());
-    //   if (existingImports) {
-    //     systemPrompt += "\n\nAlready declared imports:\n" + existingImports;
-    //   }
+    const documentMetadata = generateDocumentMetadata(
+      document.getText(),
+      this.selection
+    );
 
-    const documentMetadata = getMetatada(document.getText(), this.selection);
     if (documentMetadata) {
-      systemPrompt +=
-        "\n\nCurrent document metadata structure:\n" + documentMetadata;
+      systemPrompt += `\n\nFilename: ${path.basename(
+        document.fileName
+      )}\nCurrent document metadata structure:\n${documentMetadata}`;
     }
 
     return systemPrompt;
@@ -77,30 +79,4 @@ const getImportSection = (codeBlock: string): string => {
   }
 
   return imports.join("\n");
-};
-
-const getMetatada = (codeBlock: string, selection: vscode.Range): string => {
-  const lines = codeBlock.split("\n");
-  const metadata: { line: number; text: string }[] = [];
-  //metadata.push({ line: currentLine, text: '# User input' });
-
-  lines.forEach((text, line) => {
-    text = text.trim();
-
-    // Skip lines that are in the selection
-    if (line <= selection.end.line && line >= selection.start.line) {
-      return;
-    }
-
-    if (
-      /^import /.test(text) ||
-      /^from /.test(text) ||
-      /class [\w]+:/.test(text) ||
-      /def [\w]+\(/.test(text)
-    ) {
-      metadata.push({ line, text });
-    }
-  });
-
-  return metadata.map((m) => `Line ${m.line}: ${m.text}`).join("\n");
 };

@@ -1,0 +1,39 @@
+import React, { useEffect } from 'react';
+import { RateApp } from 'capacitor-rate-app';
+import { isMobileApp } from 'src/utils/mobile';
+import { Capacitor } from '@capacitor/core';
+
+export const CenteredPageContent = styled.div`
+    max-width: 800px;
+    margin: 0 auto;
+`;
+
+export const OtherContainer = styled(CenteredPageContent)`
+    max-width: 800px;
+    margin: 0 auto;
+`;
+
+const HAS_SEEN_RATE_APP = 'hasSeenRateApp';
+
+const RateAppDialog: React.FC = () => {
+    useEffect(() => {
+        if (!isMobileApp() || !Capacitor.isPluginAvailable('RateApp')) {
+            return;
+        }
+
+        const hasSeenRateApp = localStorage.getItem(HAS_SEEN_RATE_APP);
+
+        if (!hasSeenRateApp) {
+            const timer = setTimeout(() => {
+                void RateApp.requestReview();
+                localStorage.setItem(HAS_SEEN_RATE_APP, 'true');
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    return null;
+};
+
+export default RateAppDialog;

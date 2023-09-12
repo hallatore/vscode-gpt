@@ -1,18 +1,24 @@
 import * as vscode from "vscode";
-import { vsCodeOutput } from "./extension";
+import { vsCodeOutput } from "../extension";
 import OpenAI from "openai";
-import { chatCompletion } from "./gpt-api";
+import { chatCompletion } from "../gpt-api";
 
 export interface CodeResult {
   codeBlock: string;
   importSection?: string;
 }
 
-export abstract class CodeGeneration {
+export abstract class CodeGenerationBase {
+  extraInstructions: string;
   selection!: vscode.Range;
   editor!: vscode.TextEditor;
 
-  constructor(selection: vscode.Range, editor: vscode.TextEditor) {
+  constructor(
+    extraInstructions: string,
+    selection: vscode.Range,
+    editor: vscode.TextEditor
+  ) {
+    this.extraInstructions = extraInstructions;
     this.selection = selection;
     this.editor = editor;
   }
@@ -23,6 +29,12 @@ export abstract class CodeGeneration {
       .getText(this.selection)
       .trim();
 
+    let userPrompt = selectedCodeBlock;
+
+    if (this.extraInstructions) {
+      userPrompt = `${this.extraInstructions}\n\n${selectedCodeBlock}`;
+    }
+
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: "system",
@@ -30,7 +42,7 @@ export abstract class CodeGeneration {
       },
       {
         role: "user",
-        content: selectedCodeBlock,
+        content: userPrompt,
       },
     ];
 

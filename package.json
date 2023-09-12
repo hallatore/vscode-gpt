@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.7",
+  "version": "0.0.11",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {
@@ -43,12 +43,14 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "rimraf out && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "rimraf out && npm run compile && npm run lint && npm run copy-files",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "copy-files": "copyfiles -u 1 src/**/*.txt out/",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
@@ -57,9 +59,11 @@
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
     "@vscode/test-electron": "^2.3.4",
+    "copyfiles": "^2.4.1",
     "eslint": "^8.47.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
+    "rimraf": "^5.0.1",
     "typescript": "^5.1.6"
   },
   "dependencies": {
