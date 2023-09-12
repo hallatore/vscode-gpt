@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {
@@ -43,7 +43,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "rimraf out && npm run compile",
+    "vscode:prepublish": "npm run test && rimraf out && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "rimraf out && npm run compile && npm run lint && npm run copy-files",

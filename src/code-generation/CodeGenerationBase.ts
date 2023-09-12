@@ -46,7 +46,8 @@ export abstract class CodeGenerationBase {
       },
     ];
 
-    writeToVsCodeOutput("Request", JSON.stringify(messages, null, 2));
+    writeToVsCodeOutput("System prompt", systemPrompt);
+    writeToVsCodeOutput("User prompt", userPrompt);
 
     const result = await chatCompletion(messages);
 
