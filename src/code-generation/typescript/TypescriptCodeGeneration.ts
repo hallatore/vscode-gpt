@@ -45,7 +45,7 @@ export class TypescriptCodeGeneration extends CodeGenerationBase {
 
     const extraInformation = getExtraInformation(document);
 
-    if (extraInformation) {
+    if (extraInformation && extraInformation.length > 0) {
       systemPrompt += `\n\nExtra information:\n${extraInformation
         .map((item) => item.value)
         .join("\n")}`;

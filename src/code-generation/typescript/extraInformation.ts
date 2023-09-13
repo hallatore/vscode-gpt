@@ -11,23 +11,22 @@ type Declaration = {
 export const getExtraInformation = (
   document: vscode.TextDocument
 ): Declaration[] => {
+  let options: ts.CompilerOptions = { allowJs: true };
   const configFileName = ts.findConfigFile(
     document.fileName,
     ts.sys.fileExists
-  )!;
-
-  const configFile = ts.readConfigFile(configFileName, ts.sys.readFile);
-  const compilerOptions = ts.parseJsonConfigFileContent(
-    configFile.config,
-    ts.sys,
-    path.dirname(configFileName)
   );
 
-  const options = compilerOptions.options;
+  if (configFileName) {
+    const configFile = ts.readConfigFile(configFileName, ts.sys.readFile);
+    const compilerOptions = ts.parseJsonConfigFileContent(
+      configFile.config,
+      ts.sys,
+      path.dirname(configFileName)
+    );
 
-  const host = ts.createCompilerHost(options, true);
-  const program = ts.createProgram([document.fileName], options, host);
-  const checker = program.getTypeChecker();
+    options = compilerOptions.options;
+  }
 
   const languageService = ts.createLanguageService(
     {
@@ -76,12 +75,14 @@ export const getExtraInformation = (
     ts.createDocumentRegistry()
   );
 
+  const program = languageService.getProgram()!;
+  const checker = program.getTypeChecker();
+
   const sourceFile = languageService
     .getProgram()
     ?.getSourceFile(document.fileName);
 
   if (!sourceFile) {
-    vscode.window.showErrorMessage("File not found");
     return [];
   }
 
