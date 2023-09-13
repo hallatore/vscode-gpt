@@ -25,14 +25,17 @@ export abstract class CodeGenerationBase {
 
   async generateCode(): Promise<CodeResult | null> {
     const systemPrompt = this.getSystemPrompt(this.editor.document);
-    const selectedCodeBlock = this.editor.document
-      .getText(this.selection)
-      .trim();
-
-    let userPrompt = selectedCodeBlock;
+    const selectedCodeBlock = this.editor.document.getText(this.selection);
+    const selectedLines =
+      this.selection.start.line === this.selection.end.line
+        ? `Line ${this.selection.start.line + 1}`
+        : `Line ${this.selection.start.line + 1} - ${
+            this.selection.end.line + 1
+          }`;
+    let userPrompt = selectedLines + "\n```\n" + selectedCodeBlock + "\n```";
 
     if (this.extraInstructions) {
-      userPrompt = `${this.extraInstructions}\n\n${selectedCodeBlock}`;
+      userPrompt = `${this.extraInstructions}\n\n${userPrompt}`;
     }
 
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -49,6 +52,8 @@ export abstract class CodeGenerationBase {
     writeToVsCodeOutput("System prompt", systemPrompt);
     writeToVsCodeOutput("User prompt", userPrompt);
 
+    //return null;
+
     const result = await chatCompletion(messages);
 
     if (!result) {
@@ -56,10 +61,10 @@ export abstract class CodeGenerationBase {
     }
 
     writeToVsCodeOutput("Response", result);
-    const match = /```[\w]*([\s\S]*?)```/gm.exec(result);
+    const match = /```[\w]*[\r\n]*([\s\S]*?)[\r\n]*```/gm.exec(result);
 
     if (match && match[1]) {
-      let codeBlock = match[1].trim();
+      let codeBlock = match[1];
       return this.parseResult(codeBlock);
     }
 

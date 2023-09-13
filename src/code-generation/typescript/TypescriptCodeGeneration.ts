@@ -2,6 +2,7 @@ import { TextDocument } from "vscode";
 import { CodeGenerationBase, CodeResult } from "../CodeGenerationBase";
 import { generateDocumentMetadata } from "./metadataGeneration";
 import path = require("path");
+import { getExtraInformation } from "./extraInformation";
 
 // Add a docstring describing what the function does.
 
@@ -16,6 +17,7 @@ Do not add extra text/information/warnings to the response.
 Split the logic into separate functions if it makes it easier to read.
 Reuse functions and imports found in the current document metadata structure.
 Do not generate code that is already in the current document.
+Do not add "..." in code blocks. Only add the code that is needed.
 Use const instead of function when possible.
 
 Example response to the query "Sum two numbers":
@@ -39,6 +41,14 @@ export class TypescriptCodeGeneration extends CodeGenerationBase {
       systemPrompt += `\n\nFilename: ${path.basename(
         document.fileName
       )}\nCurrent document metadata structure:\n${documentMetadata}`;
+    }
+
+    const extraInformation = getExtraInformation(document);
+
+    if (extraInformation) {
+      systemPrompt += `\n\nExtra information:\n${extraInformation
+        .map((item) => item.value)
+        .join("\n")}`;
     }
 
     return systemPrompt;

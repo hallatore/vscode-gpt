@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.12",
+  "version": "0.0.14",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {
@@ -63,10 +63,10 @@
     "eslint": "^8.47.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "rimraf": "^5.0.1",
-    "typescript": "^5.1.6"
+    "rimraf": "^5.0.1"
   },
   "dependencies": {
-    "openai": "^4.6.0"
+    "openai": "^4.6.0",
+    "typescript": "^5.1.6"
   }
 }

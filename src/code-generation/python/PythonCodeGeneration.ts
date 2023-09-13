@@ -17,6 +17,7 @@ Do not add extra text/information/warnings to the response.
 Split the logic into separate functions if it makes it easier to read.
 Reuse functions and imports found in the current document metadata structure.
 Do not generate code that is already in the current document.
+Do not add "..." in code blocks. Only add the code that is needed.
 
 Example response to the query "Sum two numbers":
 Modified query: "Make a function that returns the sum of two numbers"

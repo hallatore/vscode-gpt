@@ -19,12 +19,14 @@ export const generateCode = async (
         selection,
         editor
       );
+      break;
     case "pyhton":
       codeGeneration = new PythonCodeGeneration(
         extraInstructions,
         selection,
         editor
       );
+      break;
     default:
       codeGeneration = new GeneralCodeGeneration(
         extraInstructions,
