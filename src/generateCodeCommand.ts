@@ -12,6 +12,12 @@ export const codeGenerationCommand = async () => {
 
     if (selection.isEmpty) {
       selection = editor.document.lineAt(selection.start.line).range;
+    } else if (selection.start.line !== selection.end.line) {
+      // If the selection spans multiple lines, we want to select the entire first line to preserve indentation
+      selection = new vscode.Range(
+        new vscode.Position(selection.start.line, 0),
+        new vscode.Position(selection.end.line, selection.end.character)
+      );
     }
 
     const extraInstructions = await vscode.window.showInputBox({
@@ -41,22 +47,29 @@ export const codeGenerationCommand = async () => {
         }
 
         editor.edit((editBuilder) => {
-          const currentText = editor.document.getText();
+          editBuilder.replace(selection, result.codeBlock);
 
-          if (result.importSection) {
-            result.importSection.split("\n").forEach((line) => {
-              line = line.trim();
+          if (result.textToReplace) {
+            result.textToReplace.forEach((item) => {
+              if (item.key === "") {
+                editBuilder.insert(editor.selection.start, item.value + "\n");
+                return;
+              }
 
-              if (!currentText.includes(line)) {
-                editBuilder.insert(
-                  editor.document.lineAt(0).range.start,
-                  line + "\n"
+              const currentText = editor.document.getText();
+              const itemIndex = currentText.indexOf(item.key);
+              if (itemIndex !== -1) {
+                const position = editor.document.positionAt(itemIndex);
+                editBuilder.replace(
+                  new vscode.Selection(
+                    position,
+                    position.translate(0, item.key.length)
+                  ),
+                  item.value
                 );
               }
             });
           }
-
-          editBuilder.replace(selection, result.codeBlock);
         });
       }
     );

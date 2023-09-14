@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import { codeGenerationCommand } from "./generateCodeCommand";
 
-export const vsCodeOutput = vscode.window.createOutputChannel("vscode-gpt");
-
 export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
     "vscode-gpt.generateCode",

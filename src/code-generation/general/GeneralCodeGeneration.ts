@@ -1,7 +1,8 @@
+import * as vscode from "vscode";
+import * as path from "path";
 import { TextDocument } from "vscode";
-import { CodeGenerationBase, CodeResult } from "../CodeGenerationBase";
 import { generateDocumentMetadata } from "./metadataGeneration";
-import path = require("path");
+import CodeGenerationBase from "../CodeGenerationBase";
 
 // Add a docstring describing what the function does.
 
@@ -16,17 +17,24 @@ Do not add extra text/information/warnings to the response.
 Split the logic into separate functions if it makes it easier to read.
 Reuse functions and imports found in the current document metadata structure.
 Do not generate code that is already in the current document.
-Do not add "..." in code blocks. Only add the code that is needed.
 
 Example response to the query "Sum two numbers":
 Modified query: "Make a function that returns the sum of two numbers"
 Code block:
 \`\`\`
-...
+
 \`\`\`
 `;
 
-export class GeneralCodeGeneration extends CodeGenerationBase {
+class GeneralCodeGeneration extends CodeGenerationBase {
+  constructor(
+    extraInstructions: string,
+    selection: vscode.Range,
+    editor: vscode.TextEditor
+  ) {
+    super(extraInstructions, selection, editor);
+  }
+
   getSystemPrompt(document: TextDocument): string {
     let systemPrompt = systemPromptBase(document.languageId).trim();
 
@@ -43,11 +51,6 @@ export class GeneralCodeGeneration extends CodeGenerationBase {
 
     return systemPrompt;
   }
-
-  parseResult(result: string): CodeResult {
-    return {
-      codeBlock: result,
-      importSection: undefined,
-    };
-  }
 }
+
+export default GeneralCodeGeneration;

@@ -1,17 +1,15 @@
 import * as vscode from "vscode";
-import { vsCodeOutput } from "../extension";
 import OpenAI from "openai";
 import { chatCompletion } from "../gpt-api";
+import ImportsParserBase from "./ImportsParserBase";
+import { CodeResult } from "./CodeResult";
+import { KeyValuePair } from "./CodeResult";
 
-export interface CodeResult {
-  codeBlock: string;
-  importSection?: string;
-}
-
-export abstract class CodeGenerationBase {
+abstract class CodeGenerationBase {
   extraInstructions: string;
   selection!: vscode.Range;
   editor!: vscode.TextEditor;
+  importsParser?: ImportsParserBase;
 
   constructor(
     extraInstructions: string,
@@ -25,19 +23,28 @@ export abstract class CodeGenerationBase {
 
   async generateCode(): Promise<CodeResult | null> {
     const systemPrompt = this.getSystemPrompt(this.editor.document);
-    const selectedCodeBlock = this.editor.document.getText(this.selection);
-    const selectedLines =
-      this.selection.start.line === this.selection.end.line
-        ? `Line ${this.selection.start.line + 1}`
-        : `Line ${this.selection.start.line + 1} - ${
-            this.selection.end.line + 1
-          }`;
-    let userPrompt = selectedLines + "\n```\n" + selectedCodeBlock + "\n```";
+    const userPrompt = this.getUserPrompt();
+    const gptResponse = await this.chatCompletion(systemPrompt, userPrompt);
 
-    if (this.extraInstructions) {
-      userPrompt = `${this.extraInstructions}\n\n${userPrompt}`;
+    if (!gptResponse) {
+      writeToVsCodeOutput("Error", "Failed to get response from GPT");
+      return null;
     }
 
+    writeToVsCodeOutput("Response", gptResponse);
+    const codeBlock = parseCodeBlock(gptResponse);
+
+    if (codeBlock) {
+      return this.parseResult(codeBlock, this.editor.document.getText());
+    }
+
+    writeToVsCodeOutput("Error", "No code block found in response");
+    return {
+      codeBlock: gptResponse,
+    };
+  }
+
+  async chatCompletion(systemPrompt: string, userPrompt: string) {
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: "system",
@@ -52,31 +59,63 @@ export abstract class CodeGenerationBase {
     writeToVsCodeOutput("System prompt", systemPrompt);
     writeToVsCodeOutput("User prompt", userPrompt);
 
-    //return null;
-
     const result = await chatCompletion(messages);
+    return result;
+  }
 
-    if (!result) {
-      return null;
+  parseResult(result: string, oldCode: string): CodeResult {
+    let textToReplace: KeyValuePair[] = [];
+
+    if (this.importsParser) {
+      textToReplace = this.importsParser.combineNewAndOldImports(
+        result,
+        oldCode
+      );
+      const importSections = this.importsParser.findImportSections(result);
+
+      if (importSections) {
+        importSections.forEach((importSection) => {
+          result = result.replace(importSection.originalValue, "").trim();
+        });
+      }
     }
 
-    writeToVsCodeOutput("Response", result);
-    const match = /```[\w]*[\r\n]*([\s\S]*?)[\r\n]*```/gm.exec(result);
+    // Remove "..." placeholder text from GPT response
+    result = result.replaceAll(/(\n|)[ /#]*\.\.\.[\W]*\n/gm, "");
 
-    if (match && match[1]) {
-      let codeBlock = match[1];
-      return this.parseResult(codeBlock);
-    }
-
-    writeToVsCodeOutput("Error", "No code block found in response");
     return {
       codeBlock: result,
+      textToReplace,
     };
   }
 
+  getUserPrompt() {
+    const selectedCodeBlock = this.editor.document.getText(this.selection);
+    const selectedLines =
+      this.selection.start.line === this.selection.end.line
+        ? `Line ${this.selection.start.line + 1}`
+        : `Line ${this.selection.start.line + 1} - ${
+            this.selection.end.line + 1
+          }`;
+    let userPrompt = selectedLines + "\n```\n" + selectedCodeBlock + "\n```";
+
+    if (this.extraInstructions) {
+      userPrompt = `${this.extraInstructions}\n\n${userPrompt}`;
+    }
+
+    return userPrompt;
+  }
+
   abstract getSystemPrompt(document: vscode.TextDocument): string;
-  abstract parseResult(result: string): CodeResult;
 }
+
+const parseCodeBlock = (chatResponse: string): string | undefined => {
+  const match = /```[\w]*[\r\n]*([\s\S]*?)[\r\n]*```/gm.exec(chatResponse);
+
+  if (match && match[1]) {
+    return match[1];
+  }
+};
 
 const paddAllLinesWith = (text: string, padding: string) => {
   return text
@@ -85,6 +124,10 @@ const paddAllLinesWith = (text: string, padding: string) => {
     .join("\n");
 };
 
+const vsCodeOutput = vscode.window.createOutputChannel("vscode-gpt");
+
 const writeToVsCodeOutput = (title: string, text: string) => {
   vsCodeOutput.appendLine(`${title}\n\n${paddAllLinesWith(text, "    ")}\n\n`);
 };
+
+export default CodeGenerationBase;

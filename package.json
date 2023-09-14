@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {

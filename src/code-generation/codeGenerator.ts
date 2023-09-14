@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
-import { CodeGenerationBase, CodeResult } from "./CodeGenerationBase";
-import { PythonCodeGeneration } from "./python/PythonCodeGeneration";
-import { TypescriptCodeGeneration } from "./typescript/TypescriptCodeGeneration";
-import { GeneralCodeGeneration } from "./general/GeneralCodeGeneration";
+import CodeGenerationBase from "./CodeGenerationBase";
+import { CodeResult } from "./CodeResult";
+import PythonCodeGeneration from "./python/PythonCodeGeneration";
+import TypescriptCodeGeneration from "./typescript/TypescriptCodeGeneration";
+import GeneralCodeGeneration from "./general/GeneralCodeGeneration";
 
 export const generateCode = async (
   extraInstructions: string,
