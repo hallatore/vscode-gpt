@@ -129,10 +129,17 @@ export const codeGenerationCommand = async () => {
             });
         };
 
-        // Disable autocomplete while generating code
-        const config = vscode.workspace.getConfiguration("editor");
-        const previousAutocompleteValue = config.get("quickSuggestions");
-        config.update("quickSuggestions", false, true);
+        // Disable vscode features while generating code
+        const features = [
+          { configName: "editor.quickSuggestions", originalValue: undefined },
+          { configName: "editor.codeLens", originalValue: undefined },
+        ];
+
+        const vscodeConfig = vscode.workspace.getConfiguration();
+        for (const feature of features) {
+          feature.originalValue = vscodeConfig.get(feature.configName);
+          vscodeConfig.update(feature.configName, false, true);
+        }
 
         const result = await generateCode(
           extraInstructions,
@@ -147,7 +154,11 @@ export const codeGenerationCommand = async () => {
         }
 
         handleTextToReplace(result);
-        config.update("quickSuggestions", previousAutocompleteValue, true);
+
+        // Restore original settings
+        for (const feature of features) {
+          vscodeConfig.update(feature.configName, feature.originalValue, true);
+        }
       }
     );
   }
