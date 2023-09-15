@@ -4,7 +4,7 @@ export type Import = {
   defaultImport?: string;
   imports?: string[];
   module: string;
-  quoteType: string;
+  quoteType?: string;
   originalValue: string;
   updated: boolean;
   kind?: string;

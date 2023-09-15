@@ -3,6 +3,7 @@ import * as path from "path";
 import { TextDocument } from "vscode";
 import CodeGenerationBase from "../CodeGenerationBase";
 import { generateDocumentMetadata } from "./metadataGeneration";
+import PythonImportsParser from "./PythonImportsParser";
 
 // Add a docstring describing what the function does.
 
@@ -33,6 +34,7 @@ class PythonCodeGeneration extends CodeGenerationBase {
     editor: vscode.TextEditor
   ) {
     super(extraInstructions, selection, editor);
+    this.importsParser = new PythonImportsParser();
   }
 
   getSystemPrompt(document: TextDocument): string {

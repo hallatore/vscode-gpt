@@ -23,7 +23,7 @@ export const generateCode = async (
         editor
       );
       break;
-    case "pyhton":
+    case "python":
       codeGeneration = new PythonCodeGeneration(
         extraInstructions,
         selection,

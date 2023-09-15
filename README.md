@@ -7,9 +7,16 @@ GPT code generation utilities for vscode
 Use GPT to generate code.
 Select text (Selects current line if no text selected) and hit ctrl+alt+enter (cmd+alt+enter on Mac).
 
-Currently supports the following file types:
-- Python (.py)
-- Typescript (.ts & .tsx)
+PS: It's best to select the whole method if you want it to rewrite parts of it.
+
+### Extra language features:
+
+#### TypeScript
+- Imports from code generation are merged with document imports
+- Information about imports in the document are included in the GPT request. (Example: "`import { isHidden } from "someModule";`" in document will generate "`const isHidden: () => boolean`")
+
+#### Python
+- Imports from code generation are merged with document imports
 
 ## Requirements
 
