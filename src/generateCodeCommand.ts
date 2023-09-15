@@ -129,6 +129,11 @@ export const codeGenerationCommand = async () => {
             });
         };
 
+        // Disable autocomplete while generating code
+        const config = vscode.workspace.getConfiguration("editor");
+        const previousAutocompleteValue = config.get("quickSuggestions");
+        config.update("quickSuggestions", false, true);
+
         const result = await generateCode(
           extraInstructions,
           selection,
@@ -137,8 +142,12 @@ export const codeGenerationCommand = async () => {
           token
         );
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        while (isUpdating) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
         handleTextToReplace(result);
+        config.update("quickSuggestions", previousAutocompleteValue, true);
       }
     );
   }
@@ -149,9 +158,9 @@ const ensureCorrectLineEndings = (
   document: vscode.TextDocument
 ) => {
   if (document.eol === vscode.EndOfLine.LF) {
-    codeBlock = codeBlock.replaceAll(/\r\n/g, "\n");
+    codeBlock = codeBlock.replaceAll("\r\n", "\n");
   } else {
-    codeBlock = codeBlock.replaceAll(/\n/g, "\r\n");
+    codeBlock = codeBlock.replaceAll("\n", "\r\n");
   }
 
   return codeBlock;

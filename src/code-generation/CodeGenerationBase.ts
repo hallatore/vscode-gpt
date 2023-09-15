@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import OpenAI from "openai";
-import { chatCompletion, chatCompletionStream } from "../gpt-api";
+import { chatCompletionStream } from "../gpt-api";
 import ImportsParserBase from "./ImportsParserBase";
 import { CodeResult } from "./CodeResult";
 import { KeyValuePair } from "./CodeResult";
@@ -145,10 +145,10 @@ const parseModifiedQuery = (chatResponse: string): string | undefined => {
 };
 
 const parseCodeBlock = (chatResponse: string): string | undefined => {
-  const match = /```[\w]*[\r\n]*([\s\S]*)[\r\n]*(```|)/gm.exec(chatResponse);
+  const match = /```[\w]*[\r\n]*([\s\S]*)([\r\n]*```|)/gm.exec(chatResponse);
 
   if (match && match[1]) {
-    return match[1].replace(/[\r\n]*(```|[\r\n]*$)/gm, "");
+    return match[1].replace(/([\r\n]*```)/gm, "");
   }
 };
 

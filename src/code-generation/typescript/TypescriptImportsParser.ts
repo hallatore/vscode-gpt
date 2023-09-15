@@ -3,7 +3,7 @@ import ImportsParserBase, { Import } from "../ImportsParserBase";
 class TypescriptImportsParser extends ImportsParserBase {
   findImportSections(codeBlock: string): Import[] {
     const regex =
-      /import ([\w *]*)[,]*([\{ ]*)([\w *,\n]*)([\} ]*) from ([\"']+)([\w \.\\/\-_]+)[\"']+[;]*/gm;
+      /import ([\w *]*)[,]*([\{ ]*)([\w *,\r\n]*)([\} ]*) from ([\"']+)([\w \.\\/\-_]+)[\"']+[;]*/gm;
     const matches = codeBlock.matchAll(regex);
     const result: Import[] = [];
 
