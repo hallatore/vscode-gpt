@@ -141,7 +141,9 @@ export const getExtraInformation = (
     }
   });
 
-  return imports;
+  return imports.filter(
+    (item) => !item.value.match(/^(namespace|import) [\w]+$/)
+  );
 };
 
 const getNodeDescription = (

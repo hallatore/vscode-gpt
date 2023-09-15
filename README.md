@@ -26,3 +26,18 @@ An OpenAI account and API key. https://platform.openai.com/account/api-keys
 
 * `vscode-gpt.apiKey`: Your OpenAI API key.
 * `vscode-gpt.model`: GPT model to use.
+* `vscode-gpt.extraPreferences`: Extra preferences. General or for specific language IDs.
+    * You can have general or language specific preferences. Here are some examples:
+    ```
+    {
+        "value": "Add comment for complex code."
+    },
+    {
+        "languageId": "typescriptreact",
+        "value": "React components are written as following: 'const MyComponent = () => ...' or 'const MyComponent = ({...}:MyComponentProps) => ...'"
+    },
+    {
+        "languageId": "typescript, typescriptreact",
+        "value": "Use arrow functions instead of function declarations."
+    }
+    ```

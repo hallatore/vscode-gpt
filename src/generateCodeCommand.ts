@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { generateCode } from "./code-generation/codeGenerator";
-import { CodeResult } from "./code-generation/CodeResult";
+import { generateCode } from "./code-generation/core/codeGenerator";
+import { CodeResult } from "./code-generation/core/CodeResult";
 
 export const codeGenerationCommand = async () => {
   const editor = vscode.window.activeTextEditor;
@@ -129,18 +129,6 @@ export const codeGenerationCommand = async () => {
             });
         };
 
-        // Disable vscode features while generating code
-        const features = [
-          { configName: "editor.quickSuggestions", originalValue: undefined },
-          { configName: "editor.codeLens", originalValue: undefined },
-        ];
-
-        const vscodeConfig = vscode.workspace.getConfiguration();
-        for (const feature of features) {
-          feature.originalValue = vscodeConfig.get(feature.configName);
-          vscodeConfig.update(feature.configName, false, true);
-        }
-
         const result = await generateCode(
           extraInstructions,
           selection,
@@ -150,15 +138,10 @@ export const codeGenerationCommand = async () => {
         );
 
         while (isUpdating) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
-        handleTextToReplace(result);
-
-        // Restore original settings
-        for (const feature of features) {
-          vscodeConfig.update(feature.configName, feature.originalValue, true);
-        }
+        handleResult(result).then(() => handleTextToReplace(result));
       }
     );
   }

@@ -1,4 +1,4 @@
-import ImportsParserBase, { Import } from "../ImportsParserBase";
+import ImportsParserBase, { Import } from "../core/ImportsParserBase";
 
 class PythonImportsParser extends ImportsParserBase {
   findImportSections(codeBlock: string): Import[] {

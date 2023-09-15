@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {
@@ -31,6 +31,39 @@
           "type": "string",
           "default": "gpt-4",
           "description": "GPT model to use"
+        },
+        "vscode-gpt.extraPreferences": {
+          "type": "array",
+          "description": "Extra preferences. General or for specific language IDs",
+          "default": [
+            {
+              "value": "Add comment for complex code."
+            },
+            {
+              "languageId": "typescriptreact",
+              "value": "React components are written as following: 'const MyComponent = () => ...' or 'const MyComponent = ({...}:MyComponentProps) => ...'"
+            },
+            {
+              "languageId": "typescript, typescriptreact",
+              "value": "Use arrow functions instead of function declarations."
+            }
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "languageId": {
+                "type": "string",
+                "description": "VSCode Document Language ID (python, typescript, typescriptreact, etc).\nSee https://code.visualstudio.com/docs/languages/identifiers for a list of all language IDs. \nPS: You can separate multiple language IDs with a comma. Example: typescript,typescriptreact"
+              },
+              "value": {
+                "type": "string",
+                "description": "Your language specific preferences.\nExample: Always use for loops instead of items.forEach().\\nAlways use _ before any local variable (like 'const _test = ')."
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
         }
       }
     },

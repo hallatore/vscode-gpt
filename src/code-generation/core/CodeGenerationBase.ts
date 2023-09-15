@@ -1,14 +1,18 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import OpenAI from "openai";
-import { chatCompletionStream } from "../gpt-api";
+import { chatCompletionStream } from "../../gpt-api";
 import ImportsParserBase from "./ImportsParserBase";
 import { CodeResult } from "./CodeResult";
 import { KeyValuePair } from "./CodeResult";
+import DocumentInformation from "./DocumentInformation";
+import { generateSystemPrompt } from "./generateSystemPrompt";
 
-abstract class CodeGenerationBase {
+class CodeGenerationBase {
   extraInstructions: string;
   selection!: vscode.Range;
   editor!: vscode.TextEditor;
+  documentInformation: DocumentInformation;
   importsParser?: ImportsParserBase;
 
   constructor(
@@ -19,6 +23,52 @@ abstract class CodeGenerationBase {
     this.extraInstructions = extraInstructions;
     this.selection = selection;
     this.editor = editor;
+    this.documentInformation = new DocumentInformation();
+  }
+
+  getSystemPrompt(document: vscode.TextDocument): string {
+    const extraPreferences = this.getExtraPreferences(document.languageId);
+    let systemPrompt = generateSystemPrompt(
+      document.languageId,
+      extraPreferences
+    );
+
+    const documentMetadata = this.documentInformation.generateDocumentOutline(
+      document.getText(),
+      this.selection
+    );
+
+    if (documentMetadata) {
+      systemPrompt += `\n\nFilename: ${path.basename(
+        document.fileName
+      )}\nCurrent document metadata structure:\n${documentMetadata}`;
+    }
+
+    return systemPrompt;
+  }
+
+  getExtraPreferences(languageId: string): string {
+    const config = vscode.workspace.getConfiguration("vscode-gpt");
+    const extraPreferences =
+      config.get<{ languageId?: string; value: string }[]>("extraPreferences");
+
+    const result: string[] = [];
+
+    if (extraPreferences) {
+      for (const preference of extraPreferences) {
+        if (
+          !preference.languageId ||
+          preference.languageId
+            .split(",")
+            .map((item) => item.trim())
+            .includes(languageId)
+        ) {
+          result.push(preference.value);
+        }
+      }
+    }
+
+    return result.join("\n");
   }
 
   async generateCode(
@@ -43,7 +93,18 @@ abstract class CodeGenerationBase {
             codeBlock,
             initialDocumentText
           );
-          streamCallback({ codeBlock: partialResult.codeBlock, modifiedQuery });
+
+          // Workaround to avoid vscode triggering stuff like auto closing brackets, etc while code is being generated.
+          if (
+            !partialResult.codeBlock.endsWith(">") &&
+            !partialResult.codeBlock.endsWith('"') &&
+            !partialResult.codeBlock.endsWith("'")
+          ) {
+            streamCallback({
+              codeBlock: partialResult.codeBlock,
+              modifiedQuery,
+            });
+          }
         }
       },
       cancellationToken
@@ -132,8 +193,6 @@ abstract class CodeGenerationBase {
 
     return userPrompt;
   }
-
-  abstract getSystemPrompt(document: vscode.TextDocument): string;
 }
 
 const parseModifiedQuery = (chatResponse: string): string | undefined => {

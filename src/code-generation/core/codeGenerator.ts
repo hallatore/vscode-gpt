@@ -1,9 +1,8 @@
 import * as vscode from "vscode";
 import CodeGenerationBase from "./CodeGenerationBase";
 import { CodeResult } from "./CodeResult";
-import PythonCodeGeneration from "./python/PythonCodeGeneration";
-import TypescriptCodeGeneration from "./typescript/TypescriptCodeGeneration";
-import GeneralCodeGeneration from "./general/GeneralCodeGeneration";
+import PythonCodeGeneration from "../python/PythonCodeGeneration";
+import TypescriptCodeGeneration from "../typescript/TypescriptCodeGeneration";
 
 export const generateCode = async (
   extraInstructions: string,
@@ -31,7 +30,7 @@ export const generateCode = async (
       );
       break;
     default:
-      codeGeneration = new GeneralCodeGeneration(
+      codeGeneration = new CodeGenerationBase(
         extraInstructions,
         selection,
         editor

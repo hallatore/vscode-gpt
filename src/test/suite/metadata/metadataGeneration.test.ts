@@ -1,12 +1,9 @@
 import * as assert from "assert";
 import * as path from "path";
 import * as fs from "fs";
-import {
+import DocumentInformation, {
   LineMetadata,
-  getLinesAroundSelection,
-  getTopLevelLines,
-  reduceAndSortLines,
-} from "../../../code-generation/metadataGeneration";
+} from "../../../code-generation/core/DocumentInformation";
 
 suite("Metadata generation tests", () => {
   const codeBlock1 = fs.readFileSync(
@@ -14,8 +11,10 @@ suite("Metadata generation tests", () => {
     "utf-8"
   );
 
+  const documentInformation: any = new DocumentInformation();
+
   test("Get top level lines", () => {
-    const lines = getTopLevelLines(codeBlock1);
+    const lines = documentInformation.getTopLevelLines(codeBlock1);
 
     assert.strictEqual(lines.length, 9);
 
@@ -30,7 +29,12 @@ suite("Metadata generation tests", () => {
   });
 
   test("Get lines around selection - 1", () => {
-    const lines = getLinesAroundSelection(0, 0, codeBlock1, 3);
+    const lines = documentInformation.getLinesAroundSelection(
+      0,
+      0,
+      codeBlock1,
+      3
+    );
 
     assert.strictEqual(lines.length, 4, "Expected 4 lines");
 
@@ -48,7 +52,12 @@ suite("Metadata generation tests", () => {
   });
 
   test("Get lines around selection - 2", () => {
-    const lines = getLinesAroundSelection(10, 10, codeBlock1, 3);
+    const lines = documentInformation.getLinesAroundSelection(
+      10,
+      10,
+      codeBlock1,
+      3
+    );
 
     assert.strictEqual(lines.length, 7, "Expected 7 lines");
 
@@ -60,7 +69,12 @@ suite("Metadata generation tests", () => {
   });
 
   test("Get lines around selection - 3", () => {
-    const lines = getLinesAroundSelection(10, 12, codeBlock1, 3);
+    const lines = documentInformation.getLinesAroundSelection(
+      10,
+      12,
+      codeBlock1,
+      3
+    );
 
     assert.strictEqual(lines.length, 9, "Expected 9 lines");
 
@@ -75,7 +89,12 @@ suite("Metadata generation tests", () => {
   });
 
   test("Get lines around selection - 4", () => {
-    const lines = getLinesAroundSelection(10, 10, codeBlock1, 0);
+    const lines = documentInformation.getLinesAroundSelection(
+      10,
+      10,
+      codeBlock1,
+      0
+    );
 
     assert.strictEqual(lines.length, 1, "Expected 1 lines");
 
@@ -87,7 +106,12 @@ suite("Metadata generation tests", () => {
   });
 
   test("Get lines around selection - 5", () => {
-    const lines = getLinesAroundSelection(0, 39, codeBlock1, 0);
+    const lines = documentInformation.getLinesAroundSelection(
+      0,
+      39,
+      codeBlock1,
+      0
+    );
 
     assert.strictEqual(lines.length, 40, "Expected 1 lines");
 
@@ -106,9 +130,11 @@ suite("Metadata generation tests", () => {
     // lines = getStyledComponents(codeBlock1);
     // lines = lines.concat(getFunctions(codeBlock1));
     // lines = lines.concat(getImports(codeBlock1));
-    lines = lines.concat(getTopLevelLines(codeBlock1));
-    lines = lines.concat(getLinesAroundSelection(10, 10, codeBlock1, 3));
-    lines = reduceAndSortLines(lines);
+    lines = lines.concat(documentInformation.getTopLevelLines(codeBlock1));
+    lines = lines.concat(
+      documentInformation.getLinesAroundSelection(10, 10, codeBlock1, 3)
+    );
+    lines = documentInformation.reduceAndSortLines(lines);
 
     assert.strictEqual(lines.length, 15, "Expected 15 lines");
 
