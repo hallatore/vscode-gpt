@@ -6,6 +6,8 @@ export const codeGenerationCommand = async () => {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     let selection: vscode.Range = editor.selection;
+    const lineEndingCharacter =
+      editor.document.eol === vscode.EndOfLine.LF ? "\n" : "\r\n";
 
     if (selection.isEmpty) {
       selection = editor.document.lineAt(selection.start.line).range;
@@ -22,11 +24,12 @@ export const codeGenerationCommand = async () => {
       placeHolder: "For example: Extract interfaces (or leave blank)",
     });
 
+    // If the user cancels the input box, we don't want to do anything
     if (extraInstructions === undefined) {
       return;
     }
 
-    // Clear current selection
+    // Clear current selection in the editor window
     var position = editor.selection.start;
     editor.selection = new vscode.Selection(position, position);
 
@@ -39,7 +42,6 @@ export const codeGenerationCommand = async () => {
         progress.report({ message: extraInstructions });
         let currentSelection = selection;
         let isFirstEdit = true;
-        let lastUpdated = Date.now();
         let isUpdating = false;
 
         const handleTextToReplace = (
@@ -53,7 +55,10 @@ export const codeGenerationCommand = async () => {
             (editBuilder) => {
               result.textToReplace!.forEach((item) => {
                 if (item.key === "") {
-                  editBuilder.insert(editor.selection.start, item.value + "\n");
+                  editBuilder.insert(
+                    editor.document.positionAt(0),
+                    item.value + lineEndingCharacter
+                  );
                   return;
                 }
                 const currentText = editor.document.getText();
@@ -75,29 +80,26 @@ export const codeGenerationCommand = async () => {
           );
         };
 
-        const handleResult = (
-          result: CodeResult | null,
-          isPartialUpdate: boolean
-        ) => {
+        const handleResult = (result: CodeResult | null): Thenable<boolean> => {
           if (token.isCancellationRequested || !result || isUpdating) {
-            return;
+            return Promise.resolve(false);
           }
           isUpdating = true;
-          lastUpdated = Date.now();
-          editor
+
+          const currentText = editor.document.getText(currentSelection);
+          let codeBlock = ensureCorrectLineEndings(
+            result.codeBlock,
+            editor.document
+          );
+
+          if (result.modifiedQuery) {
+            progress.report({ message: result.modifiedQuery });
+          }
+
+          return editor
             .edit(
               (editBuilder) => {
-                if (result.modifiedQuery) {
-                  progress.report({ message: result.modifiedQuery });
-                }
-
                 isFirstEdit = false;
-
-                const currentText = editor.document.getText(currentSelection);
-                let codeBlock = ensureLineEndings(
-                  result.codeBlock,
-                  editor.document
-                );
 
                 if (isNextPartOfCodeBlock(currentText, codeBlock)) {
                   editBuilder.insert(
@@ -107,21 +109,23 @@ export const codeGenerationCommand = async () => {
                 } else {
                   editBuilder.replace(currentSelection, codeBlock);
                 }
-
-                currentSelection = new vscode.Range(
-                  currentSelection.start,
-                  new vscode.Position(
-                    currentSelection.start.line +
-                      codeBlock.split("\n").length -
-                      1,
-                    codeBlock.split("\n").at(-1)!.length
-                  )
-                );
               },
               { undoStopBefore: isFirstEdit, undoStopAfter: false }
             )
-            .then(() => {
+            .then((success: boolean) => {
               isUpdating = false;
+
+              if (success) {
+                currentSelection = new vscode.Range(
+                  currentSelection.start,
+                  editor.document.positionAt(
+                    editor.document.offsetAt(currentSelection.start) +
+                      codeBlock.length
+                  )
+                );
+              }
+
+              return success;
             });
         };
 
@@ -129,24 +133,18 @@ export const codeGenerationCommand = async () => {
           extraInstructions,
           selection,
           editor,
-          (result: CodeResult | null) => handleResult(result, true),
+          (result: CodeResult | null) => handleResult(result),
           token
         );
 
-        // TODO: Make good without this hack
-
-        lastUpdated = 0;
-        isUpdating = false;
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        handleTextToReplace(result).then(() => handleResult(result, false));
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        handleTextToReplace(result).then(() => handleResult(result, false));
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        handleTextToReplace(result);
       }
     );
   }
 };
 
-const ensureLineEndings = (
+const ensureCorrectLineEndings = (
   codeBlock: string,
   document: vscode.TextDocument
 ) => {
