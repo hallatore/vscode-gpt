@@ -8,7 +8,9 @@ import GeneralCodeGeneration from "./general/GeneralCodeGeneration";
 export const generateCode = async (
   extraInstructions: string,
   selection: vscode.Range,
-  editor: vscode.TextEditor
+  editor: vscode.TextEditor,
+  streamCallback: (result: CodeResult | null) => void,
+  cancellationToken: vscode.CancellationToken
 ): Promise<CodeResult | null> => {
   let codeGeneration: CodeGenerationBase;
 
@@ -36,5 +38,5 @@ export const generateCode = async (
       );
   }
 
-  return await codeGeneration.generateCode();
+  return await codeGeneration.generateCode(streamCallback, cancellationToken);
 };

@@ -4,6 +4,7 @@ export type Import = {
   defaultImport?: string;
   imports?: string[];
   module: string;
+  quoteType: string;
   originalValue: string;
   updated: boolean;
   kind?: string;
@@ -56,22 +57,25 @@ abstract class ImportsParserBase {
       const newCodeImports = this.findImportSections(newImportSection);
       const oldCodeImports = this.findImportSections(oldImportSection);
       const modifiedImports: Import[] = [];
+      const quoteType =
+        oldCodeImports.length > 0 ? oldCodeImports[0].quoteType : '"';
 
-      newCodeImports.forEach((codeBlockImport) => {
+      newCodeImports.forEach((newCodeImport) => {
+        newCodeImport.quoteType = quoteType;
+
         const oldCodeImport = oldCodeImports.find(
-          (item) => item.module === codeBlockImport.module
+          (item) => item.module === newCodeImport.module
         );
 
         if (
           oldCodeImport &&
-          this.formatImport(codeBlockImport) !==
-            this.formatImport(oldCodeImport)
+          this.formatImport(newCodeImport) !== this.formatImport(oldCodeImport)
         ) {
           modifiedImports.push(
-            this.combineImport(oldCodeImport, codeBlockImport)
+            this.combineImport(oldCodeImport, newCodeImport)
           );
         } else if (!oldCodeImport) {
-          modifiedImports.push(codeBlockImport);
+          modifiedImports.push(newCodeImport);
         }
       });
 

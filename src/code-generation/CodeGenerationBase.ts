@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import OpenAI from "openai";
-import { chatCompletion } from "../gpt-api";
+import { chatCompletion, chatCompletionStream } from "../gpt-api";
 import ImportsParserBase from "./ImportsParserBase";
 import { CodeResult } from "./CodeResult";
 import { KeyValuePair } from "./CodeResult";
@@ -21,10 +21,33 @@ abstract class CodeGenerationBase {
     this.editor = editor;
   }
 
-  async generateCode(): Promise<CodeResult | null> {
+  async generateCode(
+    streamCallback: (result: CodeResult | null) => void,
+    cancellationToken: vscode.CancellationToken
+  ): Promise<CodeResult | null> {
+    const initialDocumentText = this.editor.document.getText();
     const systemPrompt = this.getSystemPrompt(this.editor.document);
     const userPrompt = this.getUserPrompt();
-    const gptResponse = await this.chatCompletion(systemPrompt, userPrompt);
+    let gptResponse = "";
+
+    await this.chatCompletion(
+      systemPrompt,
+      userPrompt,
+      (partialContent) => {
+        gptResponse += partialContent;
+        const codeBlock = parseCodeBlock(gptResponse);
+        const modifiedQuery = parseModifiedQuery(gptResponse);
+
+        if (codeBlock) {
+          const partialResult = this.parseResult(
+            codeBlock,
+            initialDocumentText
+          );
+          streamCallback({ codeBlock: partialResult.codeBlock, modifiedQuery });
+        }
+      },
+      cancellationToken
+    );
 
     if (!gptResponse) {
       writeToVsCodeOutput("Error", "Failed to get response from GPT");
@@ -35,7 +58,7 @@ abstract class CodeGenerationBase {
     const codeBlock = parseCodeBlock(gptResponse);
 
     if (codeBlock) {
-      return this.parseResult(codeBlock, this.editor.document.getText());
+      return this.parseResult(codeBlock, initialDocumentText);
     }
 
     writeToVsCodeOutput("Error", "No code block found in response");
@@ -44,7 +67,12 @@ abstract class CodeGenerationBase {
     };
   }
 
-  async chatCompletion(systemPrompt: string, userPrompt: string) {
+  async chatCompletion(
+    systemPrompt: string,
+    userPrompt: string,
+    streamCallback: (message: string) => void,
+    cancellationToken: vscode.CancellationToken
+  ) {
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: "system",
@@ -59,14 +87,13 @@ abstract class CodeGenerationBase {
     writeToVsCodeOutput("System prompt", systemPrompt);
     writeToVsCodeOutput("User prompt", userPrompt);
 
-    const result = await chatCompletion(messages);
-    return result;
+    await chatCompletionStream(messages, streamCallback, cancellationToken);
   }
 
   parseResult(result: string, oldCode: string): CodeResult {
     let textToReplace: KeyValuePair[] = [];
 
-    if (this.importsParser) {
+    if (this.importsParser && this.selection.start.line > 0) {
       textToReplace = this.importsParser.combineNewAndOldImports(
         result,
         oldCode
@@ -93,8 +120,8 @@ abstract class CodeGenerationBase {
     const selectedCodeBlock = this.editor.document.getText(this.selection);
     const selectedLines =
       this.selection.start.line === this.selection.end.line
-        ? `Line ${this.selection.start.line + 1}`
-        : `Line ${this.selection.start.line + 1} - ${
+        ? `Your response will replace line ${this.selection.start.line + 1}`
+        : `Your response will replace line ${this.selection.start.line + 1} - ${
             this.selection.end.line + 1
           }`;
     let userPrompt = selectedLines + "\n```\n" + selectedCodeBlock + "\n```";
@@ -109,11 +136,19 @@ abstract class CodeGenerationBase {
   abstract getSystemPrompt(document: vscode.TextDocument): string;
 }
 
-const parseCodeBlock = (chatResponse: string): string | undefined => {
-  const match = /```[\w]*[\r\n]*([\s\S]*?)[\r\n]*```/gm.exec(chatResponse);
+const parseModifiedQuery = (chatResponse: string): string | undefined => {
+  const match = /Modified query: \"([\w ]+)(\"|)/gm.exec(chatResponse);
 
   if (match && match[1]) {
     return match[1];
+  }
+};
+
+const parseCodeBlock = (chatResponse: string): string | undefined => {
+  const match = /```[\w]*[\r\n]*([\s\S]*)[\r\n]*(```|)/gm.exec(chatResponse);
+
+  if (match && match[1]) {
+    return match[1].replace(/[\r\n]*(```|[\r\n]*$)/gm, "");
   }
 };
 

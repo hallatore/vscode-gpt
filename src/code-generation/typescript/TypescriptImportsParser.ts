@@ -3,14 +3,14 @@ import ImportsParserBase, { Import } from "../ImportsParserBase";
 class TypescriptImportsParser extends ImportsParserBase {
   findImportSections(codeBlock: string): Import[] {
     const regex =
-      /import ([\w *]*)[,]*([\{ ]*)([\w *,\n]*)([\} ]*) from [\"']+([\w \.\\/\-_]+)[\"']+[;]*/gm;
+      /import ([\w *]*)[,]*([\{ ]*)([\w *,\n]*)([\} ]*) from ([\"']+)([\w \.\\/\-_]+)[\"']+[;]*/gm;
     const matches = codeBlock.matchAll(regex);
     const result: Import[] = [];
 
     for (const match of matches) {
       const defaultImport = match[1];
       const imports = match[3];
-      const module = match[5];
+      const module = match[6];
 
       result.push({
         defaultImport,
@@ -19,6 +19,7 @@ class TypescriptImportsParser extends ImportsParserBase {
           .map((i) => i.trim())
           .filter((i) => !!i),
         module,
+        quoteType: match[5].startsWith("'") ? "'" : '"',
         originalValue: match[0],
         updated: false,
       });
@@ -43,7 +44,7 @@ class TypescriptImportsParser extends ImportsParserBase {
       defaultImport = `${item.defaultImport}${!!imports ? "," : ""} `;
     }
 
-    return `import ${defaultImport}${imports}from "${item.module}";`;
+    return `import ${defaultImport}${imports}from ${item.quoteType}${item.module}${item.quoteType};`;
   }
 }
 

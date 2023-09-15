@@ -28,3 +28,25 @@ export const chatCompletion = async (
 
   return completion.choices[0].message.content;
 };
+
+export const chatCompletionStream = async (
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  streamCallback: (message: string) => void,
+  cancellationToken: vscode.CancellationToken
+) => {
+  const stream = await getOpenAiContext().chat.completions.create({
+    messages: messages,
+    model: getModel(),
+    top_p: 0,
+    max_tokens: 2000,
+    stream: true,
+  });
+
+  for await (const part of stream) {
+    streamCallback(part.choices[0]?.delta?.content || "");
+
+    if (cancellationToken.isCancellationRequested) {
+      stream.controller.abort();
+    }
+  }
+};
