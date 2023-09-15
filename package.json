@@ -2,7 +2,7 @@
   "name": "vscode-gpt",
   "displayName": "vscode-gpt",
   "description": "GPT code generation utilities for vscode",
-  "version": "0.0.23",
+  "version": "0.0.25",
   "publisher": "ToreLervik",
   "repository": "https://github.com/hallatore/vscode-gpt",
   "engines": {
@@ -18,7 +18,7 @@
     "onCommand:vscode-gpt.generateCode"
   ],
   "main": "./out/extension.js",
-  "icon": "",
+  "icon": "icon.png",
   "contributes": {
     "configuration": {
       "title": "vscode-gpt",

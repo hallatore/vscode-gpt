@@ -33,11 +33,15 @@ An OpenAI account and API key. https://platform.openai.com/account/api-keys
         "value": "Add comment for complex code."
     },
     {
-        "languageId": "typescriptreact",
-        "value": "React components are written as following: 'const MyComponent = () => ...' or 'const MyComponent = ({...}:MyComponentProps) => ...'"
+      "languageId": "typescriptreact",
+      "value": "Always use styled components for styling. Document structure should be (styles, props, component, export default component)"
     },
     {
-        "languageId": "typescript, typescriptreact",
-        "value": "Use arrow functions instead of function declarations."
+      "languageId": "typescriptreact",
+      "value": "Never import React from 'react'.\nReact components do not need to be typed as React.FC<>. ALWAYS use the following structure for react components: `const MyComponent = () => ...` or `const MyComponent = ({...}:MyComponentProps) => ...`"
+    },
+    {
+      "languageId": "typescript, typescriptreact",
+      "value": "Use arrow functions instead of function declarations."
     }
     ```
